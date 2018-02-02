@@ -18,9 +18,9 @@ import org.apache.spark.sql.SparkSession;
 /**
  * Read a csv file. Fit and plot the data using Deeplearning4J.
  *
- * @author Robert Altena, Matt Sordello, Scott Surette
+ * @author Matt Sordello, Scott Surette
  */
-public class CSVPlotter {
+public class TestML {
 	/**
 	 * @param args
 	 * @throws IOException
