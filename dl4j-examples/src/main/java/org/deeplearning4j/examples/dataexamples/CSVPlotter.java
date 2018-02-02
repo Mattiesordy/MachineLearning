@@ -1,255 +1,111 @@
 package org.deeplearning4j.examples.dataexamples;
 
+import java.io.IOException;
+import java.util.Arrays;
+
 import org.apache.spark.ml.feature.OneHotEncoder;
 import org.apache.spark.ml.feature.StringIndexer;
 import org.apache.spark.ml.feature.StringIndexerModel;
+import org.apache.spark.ml.feature.VectorAssembler;
+import org.apache.spark.ml.regression.GeneralizedLinearRegression;
+import org.apache.spark.ml.regression.GeneralizedLinearRegressionModel;
+import org.apache.spark.ml.regression.GeneralizedLinearRegressionTrainingSummary;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.types.StructType;
-import org.datavec.api.records.reader.RecordReader;
-import org.datavec.api.records.reader.impl.csv.CSVRecordReader;
-import org.datavec.api.split.FileSplit;
-import org.datavec.api.util.ClassPathResource;
-import org.deeplearning4j.datasets.datavec.RecordReaderDataSetIterator;
-import org.deeplearning4j.nn.api.OptimizationAlgorithm;
-import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
-import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
-import org.deeplearning4j.nn.conf.Updater;
-import org.deeplearning4j.nn.conf.layers.DenseLayer;
-import org.deeplearning4j.nn.conf.layers.OutputLayer;
-import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
-import org.deeplearning4j.nn.weights.WeightInit;
-import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
-import org.nd4j.linalg.activations.Activation;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.dataset.DataSet;
-import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
-import org.nd4j.linalg.dataset.api.preprocessor.NormalizerMinMaxScaler;
-import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.lossfunctions.LossFunctions;
-
-import static org.apache.spark.sql.functions.split;
-import com.databricks.*;
-
-import javax.swing.*;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.*;
-import com.univocity.parsers.csv.*;
 
 /**
  * Read a csv file. Fit and plot the data using Deeplearning4J.
  *
- * @author Robert Altena
+ * @author Robert Altena, Matt Sordello, Scott Surette
  */
 public class CSVPlotter {
-
-    /**
-     * @param args
-     * @throws IOException
-     * @throws InterruptedException
-     */
-    /**
-     * @param args
-     * @throws IOException
-     * @throws InterruptedException
-     */
-    /**
-     * @param args
-     * @throws IOException
-     * @throws InterruptedException
-     */
-    public static void main( String[] args ) throws IOException, InterruptedException
-    {
-       // String filename = new ClassPathResource("/DataExamples/Iowa_Property_Casualty_Insurance_Premiums_and_Losses.csv").getFile().getPath();
-    	//DataSet ds = readCSVDataset(filename);
-    	//ds.getClass();
-    	//ArrayList<DataSet> DataSetList = new ArrayList<>();
-    	//DataSetList.add(ds);
-    	
-    	//plotDataset(DataSetList); //Plot the data, make sure we have the right data.
-    	
-    	SparkSession spark = SparkSession
-                .builder()
-                .appName("SparkSample")
-                .master("local[*]")
-                .getOrCreate();
-    	
-    	SQLContext sqlContext = new SQLContext(spark);
-//    	StructType schema = new StructType()
-//    		    .add("Year", "long")
-//    		    .add("Iowa Code Chapter", "string")
-//    		    .add("State", "string")
-//    		    .add("Company name", "string")
-//    		    .add("Line of Insurance", "string")
-//    		    .add("Premiums Written", "long")
-//    		    .add("Losses Paid", "long")
-//    		    .add("Taxes Paid", "long")
-//    		    .add("NAIC Number", "long")
-//    		    .add("Iowa Company Code", "long");
-    	
-    	  Dataset<Row> ds = sqlContext.read()
-    			    .format("csv")
-    			    .option("inferSchema", "true")
-    			    .option("header", "true")
-    			    .load("C:/Tools/Learning/dl4j-examples/dl4j-examples/src/main/resources/DataExamples/Iowa_Property_Casualty_Insurance_Premiums_and_Losses.csv");
-    	  
-        ds.show(false); 
-        
-        	    StringIndexerModel indexer = new StringIndexer()
-        	      .setInputCol("State")
-        	      .setOutputCol("StateIndex")
-        	      .fit(ds);
-        	    Dataset<Row> indexed = indexer.transform(ds);
-
-        	    OneHotEncoder encoder = new OneHotEncoder()
-        	      .setInputCol("StateIndex")
-        	      .setOutputCol("StateIndexVec");
-        	    Dataset<Row> encoded = encoder.transform(indexed);
-        	    encoded.select("State", "StateIndexVec").show();
-        	    encoded.show(false);
-        	    
-        	    DataSet convertedData = (DataSet) encoded;
-
-    	MultiLayerNetwork net =fitStraightline();
-
-    	// Get the min and max x values, using Nd4j
-//    	NormalizerMinMaxScaler preProcessor = new NormalizerMinMaxScaler();
-//    	preProcessor.fit((org.nd4j.linalg.dataset.api.DataSet) ds);
-//        int nSamples = 50;
-//        INDArray x = Nd4j.linspace(preProcessor.getMin().getInt(0),preProcessor.getMax().getInt(0),nSamples).reshape(nSamples, 1);
-//        INDArray y = net.output(x);
-//        DataSet modeloutput = new DataSet(x,y);
-//        DataSetList.add(modeloutput);
-//
-//    	plotDataset(DataSetList);    //Plot data and model fit.
-  }
-
 	/**
-	 * Fit a straight line using a neural network.
-	 * @param ds The dataset to fit.
-	 * @return The network fitted to the data
+	 * @param args
+	 * @throws IOException
+	 * @throws InterruptedException
 	 */
-	private static MultiLayerNetwork fitStraightline(DataSet ds){
-		int seed = 12345;
-		int iterations = 1;
-		int nEpochs = 200;
-		double learningRate = 0.00001;
-		int numInputs = 1;
-	    int numOutputs = 1;
+	public static void main(String[] args) throws IOException, InterruptedException {
+			SparkSession spark = SparkSession.builder()
+				.appName("SparkSample")
+				.master("local[*]")
+				.getOrCreate();
 
-	    //
-	    // Hook up one input to the one output.
-	    // The resulting model is a straight line.
-	    //
-		MultiLayerConfiguration conf = new  NeuralNetConfiguration.Builder()
-                .seed(seed)
-                .iterations(iterations)
-                .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
-                .learningRate(learningRate)
-                .weightInit(WeightInit.XAVIER)
-                .updater(Updater.NESTEROVS)
-                .list()
-                .layer(0, new DenseLayer.Builder().nIn(numInputs).nOut(numOutputs)
-                        .activation(Activation.IDENTITY)
-                        .build())
-                .layer(1, new OutputLayer.Builder(LossFunctions.LossFunction.MSE)
-                        .activation(Activation.IDENTITY)
-                        .nIn(numOutputs).nOut(numOutputs).build())
-                .pretrain(false).backprop(true).build();
+		SQLContext sqlContext = new SQLContext(spark);
 
-		MultiLayerNetwork net = new MultiLayerNetwork(conf);
-		net.init();
-	    net.setListeners(new ScoreIterationListener(1));
+		Dataset<Row> ds = sqlContext.read()
+				.format("csv")
+				.option("inferSchema", "true")
+				.option("header", "true")
+				.load("src/main/resources/DataExamples/Iowa_Property_Casualty_Insurance_Premiums_and_Losses.csv");
 
-	    for( int i=0; i<nEpochs; i++ ){
-	    	net.fit(ds);
-	    }
+		StringIndexerModel indexer = new StringIndexer()
+				.setInputCol("State")
+				.setOutputCol("StateIndex")
+				.fit(ds);
+		Dataset<Row> indexed = indexer.transform(ds);
 
-	    return net;
-	}
+		OneHotEncoder encoder = new OneHotEncoder()
+				.setInputCol("StateIndex")
+				.setOutputCol("StateIndexVec");
+		Dataset<Row> encoded = encoder.transform(indexed);
 
-    /**
-     * Read a CSV file into a dataset.
-     *
-     * Use the correct constructor:
-     * DataSet ds = new RecordReaderDataSetIterator(rr,batchSize);
-     * returns the data as follows:
-     * ===========INPUT===================
-     *[[12.89, 22.70],
-     * [19.34, 20.47],
-     * [16.94,  6.08],
-     *  [15.87,  8.42],
-     *  [10.71, 26.18]]
-     *
-     *  Which is not the way the framework likes its data.
-     *
-     *  This one:
-     *   RecordReaderDataSetIterator(rr,batchSize, 1, 1, true);
-     *   returns
-     *   ===========INPUT===================
-     * [12.89, 19.34, 16.94, 15.87, 10.71]
-     * =================OUTPUT==================
-     * [22.70, 20.47,  6.08,  8.42, 26.18]
-     *
-     *  This can be used as is for regression.
-     */
-	private static DataSet readCSVDataset(String filename) throws IOException, InterruptedException{
-		int batchSize = 1000;
-		RecordReader rr = new CSVRecordReader();
-		rr.initialize(new FileSplit(new File(filename)));
+		StringIndexerModel indexerCN = new StringIndexer()
+				.setInputCol("Company Name")
+				.setOutputCol("CompanyNameIndex")
+				.fit(encoded);
+		Dataset<Row> indexedCN = indexerCN.transform(encoded);
 
-		DataSetIterator iter =  new RecordReaderDataSetIterator(rr,batchSize, 1, 1, true);
-		return iter.next();
-	}
+		OneHotEncoder encoderCN = new OneHotEncoder()
+				.setInputCol("CompanyNameIndex")
+				.setOutputCol("CompanyNameIndexVec");
+		Dataset<Row> encodedCN = encoderCN.transform(indexedCN);
 
-	/**
-	 * Generate an xy plot of the datasets provided.
-	 */
-	private static void plotDataset(ArrayList<DataSet> DataSetList){
+		StringIndexerModel indexerLOB = new StringIndexer()
+				.setInputCol("Line of Insurance")
+				.setOutputCol("LOBIndex")
+				.fit(encoded);
+		Dataset<Row> indexedLOB = indexerLOB.transform(encodedCN);
 
-		XYSeriesCollection c = new XYSeriesCollection();
+		OneHotEncoder encoderLOB = new OneHotEncoder()
+				.setInputCol("LOBIndex")
+				.setOutputCol("LOBIndexVec");
+		Dataset<Row> encodedLOB = encoderLOB.transform(indexedLOB);
 
-		int dscounter = 1; //use to name the dataseries
-		for (DataSet ds : DataSetList)
-		{
-			INDArray features = ds.getFeatures();
-			INDArray outputs= ds.getLabels();
+		encodedLOB.show();
+		VectorAssembler assembler = new VectorAssembler()
+				.setInputCols(new String[] { "StateIndexVec", "LOBIndexVec", 
+						"Iowa Company Code", "NAIC Number", "Taxes Paid", "Premiums Written" }).setOutputCol("features");
+		Dataset<Row> output = assembler.transform(encodedLOB);
+		// Set parameters for the algorithm.
+		// Here, we limit the number of iterations to 10.
 
-			int nRows = features.rows();
-			XYSeries series = new XYSeries("S" + dscounter);
-			for( int i=0; i<nRows; i++ ){
-				series.add(features.getDouble(i), outputs.getDouble(i));
-			}
+		GeneralizedLinearRegression glr = new GeneralizedLinearRegression()
+				.setFamily("gaussian")
+				.setLink("identity")
+				.setMaxIter(50)
+				.setRegParam(1)
+				.setLabelCol("Losses Paid");
 
-			c.addSeries(series);
-		}
+		// Fit the model
+		GeneralizedLinearRegressionModel model = glr.fit(output);
 
-        String title = "title";
-		String xAxisLabel = "xAxisLabel";
-		String yAxisLabel = "yAxisLabel";
-		PlotOrientation orientation = PlotOrientation.VERTICAL;
-		boolean legend = false;
-		boolean tooltips = false;
-		boolean urls = false;
-		JFreeChart chart = ChartFactory.createScatterPlot(title , xAxisLabel, yAxisLabel, c, orientation , legend , tooltips , urls);
-    	JPanel panel = new ChartPanel(chart);
+		GeneralizedLinearRegressionTrainingSummary summary = model.summary();
 
-    	 JFrame f = new JFrame();
-    	 f.add(panel);
-    	 f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-         f.pack();
-         f.setTitle("Training Data");
+		model.transform(output).show();
 
-         f.setVisible(true);
+		System.out.println("Coefficient Standard Errors: " + Arrays.toString(summary.coefficientStandardErrors()));
+		System.out.println("T Values: " + Arrays.toString(summary.tValues()));
+		System.out.println("P Values: " + Arrays.toString(summary.pValues()));
+		System.out.println("Dispersion: " + summary.dispersion());
+		System.out.println("Null Deviance: " + summary.nullDeviance());
+		System.out.println("Residual Degree Of Freedom Null: " + summary.residualDegreeOfFreedomNull());
+		System.out.println("Deviance: " + summary.deviance());
+		System.out.println("Residual Degree Of Freedom: " + summary.residualDegreeOfFreedom());
+		System.out.println("AIC: " + summary.aic());
+		System.out.println("Deviance Residuals: ");
+		summary.residuals().show();
+
 	}
 }
